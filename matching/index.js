@@ -3,103 +3,136 @@ var Classes = require("./Classes.js");
 var Map = require("collections/map");
 var Set = require("collections/set");
 
-
+/* 
+    Legend:
+        - rc = Registering Classroom Index
+*/
 module.exports = async function (context, req) {
+    context.log("Function executed once")
+    // Response
+    if (req.body && req.body.schools && req.body.careerDay && req.body.registeringClasses) {
+        context.log('JavaScript HTTP trigger function processed a request.');
 
-    context.log('JavaScript HTTP trigger function processed a request.');
+        // // Type: [{}] : See School model
+        let schools = req.body.schools
+        // context.log("[SCHOOLS] --------------------")
+        // context.log(schools)
+        // // Type: {} : See CareerDay model
+        let careerDay = req.body.careerDay
+        // context.log("[CAREERDAY] --------------------")
+        // context.log(careerDay)
+        // // Type: [{}] : See RegisteringClassroom Model
+        let registeringClasses = [...req.body.registeringClasses]
+        // context.log("[REGISTERINGCLASSES] --------------------")
+        // context.log(registeringClasses)
 
-    // Type: [{}] : See School model
-    let schools = req.body.schools
+        for(let rc = 0; rc<registeringClasses.length; rc++){
 
-    // Type: {} : See CareerDay model
-    let careerDay = req.body.careerDay
+            // initialize student object array for classroom constructor
+            let studentsArray = [];
 
-    // Type: [{}] : See RegisteringClassroom Model
-    let registeringClasses = req.body.registeringClasses
+            // initialize session object array for classroom constructor
+            let sessionsArray = [];
 
-    // iterate through the classrooms, running the matching algorithm on each
-    for (let i = 0; i < registeringClasses.length; i++) {
-
-        // create the Student objects
-        let studentArray = [];
-        for (let j = 0; j < registeringClasses[i].students.length; j++) {
-            let name = registeringClasses[i].students[j].firstName + " " + registeringClasses[i].students[j].lastName;
-            let id = registeringClasses[i].students[j].id;
-            let teacher = registeringClasses[i].teacher.id;
-            let preferences = [];
-            for (let k = 0; k < registeringClasses[i].students[i].preferredSubjects.length; k++) {
-                preferences.push(registeringClasses[i].students[j].preferredSubjects[k]);
+            // iterate through students of registering class JSON
+            for (let s = 0; s < registeringClasses[rc].students.length; s++) {
+                let student = registeringClasses[rc].students[s];
+                let name = student.firstName + " " + student.lastName;
+                let id = student.id;
+                let teacher = registeringClasses[rc].teacher.firstName + " " +
+                    registeringClasses[rc].teacher.lastName;
+                let numPeriods = careerDay.numPeriods;
+                let preferences = student.preferredSubjects.map(pref => pref.name);
+                studentsArray.push(new Classes.Student(name, id, teacher, numPeriods, preferences));
             }
-            let numPeriods = int (careerDay.numPeriods);
-            let newStudent = new Classes.Student(name, id, teacher, numPeriods, preferences);
-            studentArray.push(newStudent);
-        }
 
-        // create the Session objects
-        let sessionArray = [];
-        for (let j = 0; j < registeringClasses[i].sessions.length; j++) {
-            let period = int (registeringClasses[i].sessions[j].period);
-            let subject = resgisteringClasses[i].sessions[j].name;
-            let capacity = int (registeringClasses[i].sessions[j].seats);
-            let teacher = registeringClasses[i].sessions[j].id;
-            let newSession = new Classes.Session(period, subject, capacity, teacher);
-            sessionArray.push(newSession);
-        }
+            // iterate thorugh sessions of registering class JSON
+            for (let s = 0; s < registeringClasses[rc].sessions.length; s++) {
+                let session = registeringClasses[rc].sessions[s];
+                let period = session.period;
+                let subject = session.name;
+                let capacity = session.seats;
+                let teacher = session.id;
+                sessionsArray.push(new Classes.Session(period, subject, capacity, teacher));
+            }
 
-        // create the Classroom object and run the matching algorithm 
-        let classroom = new Classes.Classroom(registeringClasses[i].id, studentArray, sessionArray);
-        classroom.matchingAlgorithm();
-
-        // check if it's a valid matching; if not, run algorithm again until it works or times out
-        let limit = 0;
-        while(!classroom.isValidMatching() && limit < 1000) {
-            classroom.resetAssignments();
-            classroom.matchingAlgorithm();
-            limit++;
-        }
-        if (limit >= 1000) {
-            //data error: there is some kind of error with the info fed into the algorithm
-        }
-
-        // update JSON objects (classroom level and careerDay level)
-        let updatedSessions = classroom.getSessions().values();
-        let sess = updatedSessions.next();
-        while (!sess.done) {
-            for (let j = 0; j < registeringClasses[i].sessions.length; j++) {
-                if (sess.getTeacher() == registeringClasses[i].sessions[j].id) {
-                    let studs = classroom.getStudents().values();
-                    let stud = studs.next();
-                    while (!stud.done) {
-                        let first = stud.getName().split(" ")[0];
-                        let last = stud.getName().split(" ")[1];
-                        registeringClasses[i].sessions[j].assignedStudents.push(JSON.stringify({id: stud.getId(), firstName: first, lastName: last}));
-                        for (let k = 0; k < careerDay.sessions.length; k++) {
-                            if (sess.getId() == careerDay.sessions[k].id) {
-                                careerDay.sessions[k].assignedStudents.push(JSON.stringify({id: stud.getId(), firstName: first, lastName: last}));
-                            }
-                        } 
-                        for (let k = 0; k < registeringClasses[i].students.length; k++) {
-                            if (stud.getId() == regsiteringClasses[i].students[i].id) {
-                                registeringClasses[i].students[i].schedule[sess.getPeriod()] = (JSON.stringify({id: sess.getTeacher(), name: sess.getSubject()}));
-                            }
-                        }
-                    }
+            let classroom = new Classes.Classroom(registeringClasses[rc].id, studentsArray, sessionsArray);
+            let result = classroom.matchingAlgorithm();
+            let count = 0;
+            while (!result) {
+                classroom.resetAssignments();
+                classroom.matchingAlgorithm;
+                count++;
+                if (count > 100) {
+                    break;
                 }
             }
-        }
-    }
 
-    // Response
-    if (req.query.name || (req.body && req.body.name)) {
+            // TODO: if result is still false, that means a valid matching is not possible
+            // so we need to send an error
+
+            context.log(classroom.isValidMatching());
+            
+            let sess = classroom.getSessions().values();
+            let ses = sess.next();
+            while (!ses.done) {
+                let sesVal = ses.value;
+                let members = ses.value.getStudents();
+                let studs = members.values();
+                let stud = studs.next();
+                while (!stud.done) {
+                    let studVal = stud.value;
+                    let studObject = classroom.getStudents().get(studVal);
+                    let curr = 0;
+                    while (curr < registeringClasses[rc].sessions.length) {
+                        if (sesVal.getTeacher() === registeringClasses[rc].sessions[curr].id) {
+                            let addStud = {
+                                "id": studObject.getId(),
+                                "firstName": studObject.getName().split(" ")[0],
+                                "lastName": studObject.getName().split(" ")[1]
+                            }
+                            registeringClasses[rc].sessions[curr].assignedStudents.push(addStud);
+                            careerDay.sessions[curr].assignedStudents.push(addStud);
+                        }
+                        curr++;
+                    }
+                    let cur = 0;
+                    while (cur < registeringClasses[rc].students.length) {
+                        if (studObject.getId() === registeringClasses[rc].students[cur].id) {
+                            context.log(registeringClasses[rc].students[cur].schedule)
+                            context.log(sesVal.getPeriod())
+                            registeringClasses[rc].students[cur].schedule[sesVal.getPeriod()] = {
+                                "id": sesVal.getTeacher(),
+                                "name": sesVal.getSubject()
+                            }
+                        }
+                        cur++;
+                    }
+                    stud = studs.next();
+                }
+                ses = sess.next();
+            }            
+        }
+        
+        context.log("[CareerDay]")
+        context.log(careerDay)
+        context.log("[registeringClasses]")
+        context.log(registeringClasses[0].students[0])
+        context.log("[schools]     " + schools)
         context.res = {
             // status: 200, /* Defaults to 200 */
-            body: "Hello " + (req.query.name || req.body.name)
+            body: {
+                message: "Career Day successfully saved to CosmosDB",
+                careerDay: careerDay,
+                registeringClasses: registeringClasses,
+                schools: schools
+            }
         };
-    }
-    else {
+    } else {
         context.res = {
             status: 400,
             body: "Please pass a name on the query string or in the request body"
         };
     }
+    context.done()
 };

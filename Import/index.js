@@ -3,9 +3,8 @@ var GoogleSpreadsheet = require('google-spreadsheet');
 const { promisify } = require('util')
 
 module.exports = async function (context, req) {
+    context.log('JavaScript HTTP trigger function processed a request.');
     if(req.body.careerDayDate && req.body.sheetLink){
-        var uniqid = require('uniqid');
-        context.log('JavaScript HTTP trigger function processed a request.');
         //context.log('[COSMOS] Attempting to Connect')
         //Uses mongoose to connect to CosmosDB Mongo API
         // await mongoose.connect('mongodb://bestprep-mongo.documents.azure.com:10255/bestprep-mongo'+"?ssl=true&replicaSet=globaldb", {
@@ -34,12 +33,13 @@ module.exports = async function (context, req) {
         const info = await promisify(doc.getInfo)();
         const sheet = info.worksheets[0];
         const rows = await promisify(sheet.getRows)({
-            offset: 1
+            offset: 1,
         })
         let students = [{}]
         let newCareerDay = {
             "id": uniqid(),
             "date": req.body.careerDayDate,
+            "numPeriods": req.body.numPeriods,
             "schools": [],
             "subjects": [],
             "sessions": []
@@ -52,16 +52,29 @@ module.exports = async function (context, req) {
             and add it to the schools array */
             let preferences = []
             //For every key in value (the row we are looking at from Google sheets)
-            //TODO: Add functionality to generate new subjects based on preferences
+            //TODO: Add functionality to generate new subjects based on preferences, DONE: but should test
             for (var key in value) { //FIXME: This could probably be optimized in some way
                 if (/preferences\d{1}/.test(key) && !(value[key] === 'No Preference')) {
+                    //If subject not already in the Career Day object, add it
                     if (!newCareerDay.subjects.find(subject => subject.name === value[key])) {
+                        let newId = uniqid();
                         newCareerDay.subjects.push({
-                            "id": uniqid(), //Master Id
+                            "id": newId, //Master Id
                             "name": value[key]
                         })
+                        for(x=0;x<req.body.numPeriods;x++){
+                            newCareerDay.sessions.push({
+                                "id": newId, //Master Id
+                                "name": value[key], //Subject Name
+                                "seats": 0,
+                                "period": x,
+                                "assignedStudents": []
+                            })
+                        }
+                        
                     }
-                    context.log(value[key])
+                    context.log(newCareerDay.sessions)
+                    context.log(newCareerDay.subjects)
                     preferences.push(newCareerDay.subjects.find(e => e.name === value[key])) 
                 }
             }
@@ -81,7 +94,7 @@ module.exports = async function (context, req) {
                 - Run extensive testing on this if statement/function, it is the crux of importing data*/
             //FIXME: Optimize/Clean this up, it is visually unappealing, extract into its own method/function
             //This method, despite being mildly unattractive, correctly creates a new RegisteringClass
-            let foundClass = registeringClasses.find(e => e.school.name === value.school && (e.school.teacher.lastName === value.teachersname.split(' ')[1] && e.school.teacher.firstName === value.teachersname.split(' ')[0]));
+            let foundClass = registeringClasses.find(e => e.school.name === value.school && (e.teacher.lastName === value.teachersname.split(' ')[1] && e.teacher.firstName === value.teachersname.split(' ')[0]));
             if (!foundClass) {
                 registeringClasses = [...registeringClasses, {
                     "id": uniqid(),
@@ -92,22 +105,24 @@ module.exports = async function (context, req) {
                     "teacher": {
                         "_id": false,
                         "firstName": value.teachersname.split(' ')[0],
-                        "LastName": value.teachersname.split(' ')[1],
+                        "lastName": value.teachersname.split(' ')[1],
                     },
                     "students": [{
                         "id": uniqid(),
                         "firstName": value.firstname,
                         "lastName": value.lastname,
-                        "preferredSubjects": preferences
+                        "preferredSubjects": preferences,
+                        "schedule": []
                     }],
-                    "sessions": []
+                    "sessions": newCareerDay.sessions
                 }]
             } else {
                 foundClass.students = [...foundClass.students, {
                     "id": uniqid(),
                     "firstName": value.firstname,
                     "lastName": value.lastname,
-                    "preferredSubjects": preferences
+                    "preferredSubjects": preferences,
+                    "schedule": []
                 }]
             }
         }
@@ -151,6 +166,8 @@ module.exports = async function (context, req) {
         context.log(schools)
         context.log("-------------------------------- \n [ Registering Classes ] \n")
         context.log(registeringClasses)
+        context.log("numPeriods" + req.body.numPeriods)
+        context.log("date" + req.body.careerDayDate)
         //mongoose.connection.close() 
 
     }else{

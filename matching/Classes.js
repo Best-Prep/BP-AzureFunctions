@@ -380,7 +380,24 @@ class Classroom {
         }
         return true;
     }
-
+    shuffle1(array) {
+        let currentIndex = array.length, temporaryValue, randomIndex;
+      
+        // while there remain elements to shuffle...
+        while (0 !== currentIndex) {
+      
+          // pick a remaining element...
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          currentIndex -= 1;
+      
+          // and swap it with the current element.
+          temporaryValue = array[currentIndex];
+          array[currentIndex] = array[randomIndex];
+          array[randomIndex] = temporaryValue;
+        }
+      
+        return array;
+    }
     /*****************************************************************
     * gives all students in the classroom which the method is called 
     * on full and valid schedules for the specific Career Day
@@ -408,7 +425,7 @@ class Classroom {
         while (studentsNotFull.length != 0){
 
             // randomize order of students
-            studentsNotFull = shuffle(studentsNotFull);
+            studentsNotFull = this.shuffle1(studentsNotFull);
 
             // iterate through students with preferences and unfilled schedules
             for (let i = 0; i < studentsNotFull.length; i++) {
@@ -587,26 +604,31 @@ class Classroom {
             }
         }
     }
+    
 }
 
 /*****************************************************************
 * randomizes the order of elements in an array
 *****************************************************************/
-function shuffle(array) {
-    let currentIndex = array.length, temporaryValue, randomIndex;
+// function shuffle(array) {
+//     let currentIndex = array.length, temporaryValue, randomIndex;
   
-    // while there remain elements to shuffle...
-    while (0 !== currentIndex) {
+//     // while there remain elements to shuffle...
+//     while (0 !== currentIndex) {
   
-      // pick a remaining element...
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex -= 1;
+//       // pick a remaining element...
+//       randomIndex = Math.floor(Math.random() * currentIndex);
+//       currentIndex -= 1;
   
-      // and swap it with the current element.
-      temporaryValue = array[currentIndex];
-      array[currentIndex] = array[randomIndex];
-      array[randomIndex] = temporaryValue;
-    }
+//       // and swap it with the current element.
+//       temporaryValue = array[currentIndex];
+//       array[currentIndex] = array[randomIndex];
+//       array[randomIndex] = temporaryValue;
+//     }
   
-    return array;
-}
+//     return array;
+// }
+
+exports.Student = Student
+exports.Classroom = Classroom
+exports.Session = Session
