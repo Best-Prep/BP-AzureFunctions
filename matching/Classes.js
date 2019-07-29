@@ -361,43 +361,27 @@ class Classroom {
     }
 
     /*****************************************************************
-    * returns true if all the students in the classroom have
-    * full and valid schedules 
+    * randomizes the order of elements in an array
     *****************************************************************/
-    isValidMatching() {
-        let students = this.getStudents().values();
-        for (let i = 0; i < students.length; i++) {
-            let curr = students[i];
-            let schedule = curr.getSchedule();
-            let taken = new Set([]);
-            for (let j = 0; j < schedule.length; j++) {
-                if (taken.has(schedule[j])) {
-                    return false;
-                } else {
-                    taken.add(schedule[j]);
-                }
-            }
-        }
-        return true;
-    }
-    shuffle1(array) {
+    shuffle(array) {
         let currentIndex = array.length, temporaryValue, randomIndex;
-      
+    
         // while there remain elements to shuffle...
         while (0 !== currentIndex) {
-      
-          // pick a remaining element...
-          randomIndex = Math.floor(Math.random() * currentIndex);
-          currentIndex -= 1;
-      
-          // and swap it with the current element.
-          temporaryValue = array[currentIndex];
-          array[currentIndex] = array[randomIndex];
-          array[randomIndex] = temporaryValue;
+    
+        // pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+    
+        // and swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
         }
-      
+    
         return array;
-    }
+    } 
+
     /*****************************************************************
     * gives all students in the classroom which the method is called 
     * on full and valid schedules for the specific Career Day
@@ -411,7 +395,7 @@ class Classroom {
         let studentsNotFull = [];
 
         // make two lists of all the students (one for keeping track of all
-        // students, one for keeping track of students with unfilled schedules
+        // students, one for keeping track of students with unfilled schedules)
         let studs = this.students.values();
         let stu = studs.next();
         while(!stu.done) {
@@ -422,10 +406,18 @@ class Classroom {
 
         // iterate through all students and their preferences until there
         // are no students left with unfilled schedules
+        let count1 = 0;
+        let count2 = 0;
         while (studentsNotFull.length != 0){
 
+            // updating counts to later check if the method is stuck in an infinite loop
+            count1++;
+            if (studentsNotFull.length == 1){
+                count2++;
+            }
+
             // randomize order of students
-            studentsNotFull = this.shuffle1(studentsNotFull);
+            studentsNotFull = this.shuffle(studentsNotFull);
 
             // iterate through students with preferences and unfilled schedules
             for (let i = 0; i < studentsNotFull.length; i++) {
@@ -602,32 +594,44 @@ class Classroom {
                     }
                 }
             }
-        }
-    }
-    
-}
 
-/*****************************************************************
-* randomizes the order of elements in an array
-*****************************************************************/
-// function shuffle(array) {
-//     let currentIndex = array.length, temporaryValue, randomIndex;
-  
-//     // while there remain elements to shuffle...
-//     while (0 !== currentIndex) {
-  
-//       // pick a remaining element...
-//       randomIndex = Math.floor(Math.random() * currentIndex);
-//       currentIndex -= 1;
-  
-//       // and swap it with the current element.
-//       temporaryValue = array[currentIndex];
-//       array[currentIndex] = array[randomIndex];
-//       array[randomIndex] = temporaryValue;
-//     }
-  
-//     return array;
-// }
+            // if it's never going to reach a valid matching, return false
+            if ((count1 > students[0].getPreferences().length * 2) || (count2 > 5)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /*****************************************************************
+    * returns true if all the students in the classroom have
+    * full and valid schedules 
+    *****************************************************************/
+    isValidMatching() {
+        let studs = this.students.values();
+        let stu = studs.next();
+        while(!stu.done) {
+            let curr = stu.value;
+            if (curr.isFull()) {
+                let schedule = curr.getSchedule();
+                let taken = new Set([]);
+                for (let j = 0; j < schedule.length; j++) {
+                    if (taken.contains(schedule[j])) {
+                        return false;
+                    } else {
+                        taken.add(schedule[j]);
+                    }
+                }
+                stu = studs.next();
+            }
+            else {
+                return false;
+            }
+        }
+        return true;
+    }
+}
 
 exports.Student = Student
 exports.Classroom = Classroom
