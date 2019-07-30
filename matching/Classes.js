@@ -398,21 +398,23 @@ class Classroom {
         // students, one for keeping track of students with unfilled schedules)
         let studs = this.students.values();
         let stu = studs.next();
-        while(!stu.done) {
+        while (!stu.done) {
             students.push(stu.value);
             studentsNotFull.push(stu.value);
             stu = studs.next();
         }
 
-        // iterate through all students and their preferences until there
-        // are no students left with unfilled schedules
+        // initiate counts to 0
         let count1 = 0;
         let count2 = 0;
-        while (studentsNotFull.length != 0){
+
+        // iterate through all students and their preferences until there
+        // are no students left with unfilled schedules        
+        while (studentsNotFull.length != 0) {
 
             // updating counts to later check if the method is stuck in an infinite loop
             count1++;
-            if (studentsNotFull.length == 1){
+            if (studentsNotFull.length == 1) {
                 count2++;
             }
 
