@@ -19,18 +19,15 @@ module.exports = async function (context, req) {
     //Catch the error
     .catch((err) => context.log(err));
     context.log(req.body.careerDayDate)
-    let careerId = await CareerDay.findOne({"date": req.body.careerDayDate})
-    context.log(careerId)
-    careerId = careerId.id
-    context.log(careerId)
-    let foundClassrooms = await RegisteringClass.find({"careerDayId": careerId});
+    let careerDay = await CareerDay.findOne({"date": req.body.careerDayDate})
+    let foundClassrooms = await RegisteringClass.find({"careerDayId": careerDay.id});
     context.log(foundClassrooms)
     if (foundClassrooms.length > 0) {
         context.res = {
             // status: 200, /* Defaults to 200 */
             body: {
-                    message: "Classrooms found successfully.",
-                    careerDayId: careerId,
+                    message: "CareerDay amd Classrooms",
+                    careerDay: careerDay,
                     classrooms: foundClassrooms
             },
             headers: {

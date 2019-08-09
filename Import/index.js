@@ -54,7 +54,7 @@ module.exports = async function (context, req) {
             //For every key in value (the row we are looking at from Google sheets)
             //TODO: Add functionality to generate new subjects based on preferences, DONE: but should test
             for (var key in value) { //FIXME: This could probably be optimized in some way
-                if (/preferences\d{1}/.test(key) && !(value[key] === 'No Preference')) {
+                if (/rankallcareersbypreference\d{1}/.test(key) && !(value[key] === 'No Preference')) {
                     //If subject not already in the Career Day object, add it
                     if (!newCareerDay.subjects.find(subject => subject.name === value[key])) {
                         let newId = uniqid();
@@ -64,7 +64,7 @@ module.exports = async function (context, req) {
                         })
                         for(x=0;x<req.body.numPeriods;x++){
                             newCareerDay.sessions.push({
-                                "id": newId, //Master Id
+                                "id": uniqid(), //Master Session Id, Unrelated to the Subject Id
                                 "name": value[key], //Subject Name
                                 "seats": 0,
                                 "period": x,
@@ -94,21 +94,23 @@ module.exports = async function (context, req) {
                 - Run extensive testing on this if statement/function, it is the crux of importing data*/
             //FIXME: Optimize/Clean this up, it is visually unappealing, extract into its own method/function
             //This method, despite being mildly unattractive, correctly creates a new RegisteringClass
-            let foundClass = registeringClasses.find(e => e.school.name === value.school && (e.teacher.lastName === value.teachersname.split(' ')[1] && e.teacher.firstName === value.teachersname.split(' ')[0]));
+            let foundClass = registeringClasses.find(e => e.school.name === value.school && (e.teacher.lastName === value.teacher.split(' ')[1] && e.teacher.firstName === value.teacher.split(' ')[0]));
             if (!foundClass) {
                 registeringClasses = [...registeringClasses, {
                     "id": uniqid(),
+                    "careerDayId": newCareerDay.id,
                     "school": {
                         "id": schools.find(e => e.name === value.school).id,
                         "name": value.school,
                     },
                     "teacher": {
                         "_id": false,
-                        "firstName": value.teachersname.split(' ')[0],
-                        "lastName": value.teachersname.split(' ')[1],
+                        "firstName": value.teacher.split(' ')[0],
+                        "lastName": value.teacher.split(' ')[1],
                     },
                     "students": [{
                         "id": uniqid(),
+                        "school": schools.find(e => e.name === value.school).id,
                         "firstName": value.firstname,
                         "lastName": value.lastname,
                         "preferredSubjects": preferences,
@@ -119,6 +121,7 @@ module.exports = async function (context, req) {
             } else {
                 foundClass.students = [...foundClass.students, {
                     "id": uniqid(),
+                    "school": schools.find(e => e.name === value.school).id,
                     "firstName": value.firstname,
                     "lastName": value.lastname,
                     "preferredSubjects": preferences,
@@ -175,8 +178,8 @@ module.exports = async function (context, req) {
             // status: 200, /* Defaults to 200 */
             status: 400,
             body: {
-                    message: "Import unsuccessful. Please double check the link you put in. If the link appears correct, please check the documentation."
-                },
+                message: "Import unsuccessful. Please ensure that you provided a date and a link to the spreadsheet"
+            },
             headers: {
                 'Content-Type': 'application/json'
             }

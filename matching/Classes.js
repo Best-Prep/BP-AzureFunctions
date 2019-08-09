@@ -23,10 +23,11 @@ class Student {
     *    of the sessions the student is signed up for and the values 
     *    are the indices in the schedule array of those subjects)
     *****************************************************************/
-    constructor(name, id, teacher, numPeriods, preferences) {
+    constructor(name, id, teacher, school, numPeriods, preferences) {
         this.name = name;
         this.id = id;
         this.teacher = teacher;
+        this.school = school;
         this.numPeriods = numPeriods;
         this.preferences = preferences;
         this.schedule = [];
@@ -43,6 +44,10 @@ class Student {
 
     getTeacher() {
         return this.teacher;
+    }
+
+    getSchool(){
+        return this.school;
     }
 
     getNumPeriods() {

@@ -18,19 +18,15 @@ module.exports = async function (context, req) {
     .then(() => context.log('[COSMOS] Connection to CosmosDB successful'))
     //Catch the error
     .catch((err) => context.log(err));
-    context.log(req.body.careerDayDate)
-    let careerId = await CareerDay.findOne({"date": req.body.careerDayDate})
-    context.log(careerId)
-    careerId = careerId.id
-    context.log(careerId)
-    let foundClassrooms = await RegisteringClass.find({"careerDayId": careerId});
+    let careerDay = await CareerDay.findOne({"id": req.body.careerDayId})
+    let foundClassrooms = await RegisteringClass.find({"careerDayId": careerDay.id});
     context.log(foundClassrooms)
     if (foundClassrooms.length > 0) {
         context.res = {
             // status: 200, /* Defaults to 200 */
             body: {
-                    message: "Classrooms found successfully.",
-                    careerDayId: careerId,
+                    message: "CareerDay and Classrooms found successfully.",
+                    careerDay: careerDay,
                     classrooms: foundClassrooms
             },
             headers: {
@@ -43,7 +39,7 @@ module.exports = async function (context, req) {
         context.res= {
             status: 400,
             body: {
-                message: "Unable to retrieve classrooms. Please ensure the date you provided is correct."
+                message: "Unable to retrieve data."
             },
             headers: {
                 'Content-Type': 'application/json'
