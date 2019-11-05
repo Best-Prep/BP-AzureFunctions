@@ -10,7 +10,7 @@
     "collections": "^5.1.9",
     "express": "^4.17.1",
     "google-spreadsheet": "^2.0.7",
-    "mongoose": "^5.6.5",
+    "mongoose": "^5.7.5",
     "promisify": "0.0.3",
     "uniqid": "^5.0.3"
   },
